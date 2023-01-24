@@ -9,7 +9,7 @@ import (
 
 const redis_Error_mes = "something went wrong, reduis can not found the token"
 
-type redis interface {
+type redisSvc interface {
 	Get(ctx context.Context, token string) (string, error)
 	Set(ctx context.Context, key string, value string, expiration int64) error
 	Delete(ctx context.Context, key string) error
@@ -25,12 +25,12 @@ type authTool interface {
 }
 
 type AuthService struct {
-	redis      redis
+	redis      redisSvc
 	userServer userService
 	auth       authTool
 }
 
-func New(user userService, redisRepo redis, auth authTool) *AuthService {
+func New(user userService, redisRepo redisSvc, auth authTool) *AuthService {
 	return &AuthService{
 		redis:      redisRepo,
 		userServer: user,
@@ -49,7 +49,7 @@ func (s *AuthService) Login(ctx context.Context, params *model.LoginInfo) (*mode
 		return nil, nil
 	}
 
-	return CreateToken(ctx, params.Name, s.auth, s.redis)
+	return createToken(ctx, params.Name, s.auth, s.redis)
 }
 
 func (s *AuthService) Verify(ctx context.Context, params *model.Authentication) (bool, error) {
@@ -66,5 +66,5 @@ func (s *AuthService) Refresh(ctx context.Context, params *model.Authentication)
 		return nil, errors.New("not vaild token")
 	}
 
-	return CreateToken(ctx, params.Name, s.auth, s.redis)
+	return createToken(ctx, params.Name, s.auth, s.redis)
 }

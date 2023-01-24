@@ -1,4 +1,4 @@
-package auth_test
+package auth
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/sean0427/micro-service-pratice-auth-domain"
 	mock "github.com/sean0427/micro-service-pratice-auth-domain/mock"
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
@@ -22,11 +21,10 @@ func FuzzCreateToken(f *testing.F) {
 		auth := mock.NewMockauthTool(ctrl)
 		redis := mock.NewMockredis(ctrl)
 
-		auth.EXPECT().CreateToken(name).Return(token, expiredTime, nil).Times(authRun)
+		auth.EXPECT().CreateToken(name).Return(token, expiredTime, nil).Times(1)
 		redis.EXPECT().Set(gomock.Any(), token, name, expiredTime).Return(nil).Times(redisRun)
 
-		got, err := CreateToken(context.Background(), name, auth, redis)
-
+		got, err := createToken(context.Background(), name, auth, redis)
 		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
@@ -101,7 +99,7 @@ var testCreateToken_Error = []struct {
 	},
 }
 
-func TestCreate_Error(t *testing.T) {
+func TestCreateToken_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	auth := mock.NewMockauthTool(ctrl)
 	redis := mock.NewMockredis(ctrl)
@@ -120,7 +118,7 @@ func TestCreate_Error(t *testing.T) {
 				Return(c.redisRun.err).
 				Times(c.redisRun.times)
 
-			got, err := CreateToken(context.Background(), c.params.Name, auth, redis)
+			got, err := createToken(context.Background(), c.params.Name, auth, redis)
 			if got != nil || err == nil {
 				t.Fatal("should get error")
 			}
@@ -178,7 +176,7 @@ func FuzzVerify(f *testing.F) {
 	})
 }
 
-var testAuthService_Error_cases = []struct {
+var testVerify_Error_cases = []struct {
 	name       string
 	authReturn struct {
 		msg     string
@@ -243,7 +241,7 @@ func TestVerify_Error(t *testing.T) {
 	const name = "test-name"
 	const token = "test-token"
 
-	for _, c := range testAuthService_Error_cases {
+	for _, c := range testVerify_Error_cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			auth := mock.NewMockauthTool(ctrl)
