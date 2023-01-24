@@ -3,6 +3,7 @@ package auth_test
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -11,6 +12,43 @@ import (
 
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
+
+func TestMain(m *testing.M) {
+	orgCreateToken := CreateToken
+	code := m.Run()
+	CreateToken = orgCreateToken
+	os.Exit(code)
+}
+
+func Fuzz_createToken(f *testing.F) {
+	f.Add("name_any", "pw", "token_any", int64(111232), 1, 1)
+	f.Add("deaff", "fea", "awefafwefeawf", int64(112311), 1, 1)
+	f.Add("123123132", "3123", "123131fewafeawfeaffw", int64(11121), 1, 1)
+
+	f.Fuzz(func(t *testing.T, name, pw, token string, expiredTime int64, authRun int, redisRun int) {
+		ctrl := gomock.NewController(t)
+
+		auth := mock.NewMockauthTool(ctrl)
+		redis := mock.NewMockredis(ctrl)
+
+		auth.EXPECT().CreateToken(name).Return(token, expiredTime, nil).Times(authRun)
+		redis.EXPECT().Set(gomock.Any(), token, name, expiredTime).Return(nil).Times(redisRun)
+
+		got, err := CreateToken(context.Background(), name, auth, redis)
+
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+
+		if got.Token != token {
+			t.Errorf("want: %s, got: %s", token, got.Token)
+		}
+
+		if got.Name != name {
+			t.Errorf("want: %s, got: %s", name, got.Name)
+		}
+	})
+}
 
 func FuzzAuthService_Login(f *testing.F) {
 	f.Add("name_any", "pw", "token_any", true, int64(111232), 1, 1)

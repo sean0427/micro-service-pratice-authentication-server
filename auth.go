@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
@@ -30,6 +31,24 @@ type AuthService struct {
 	auth       authTool
 }
 
+var CreateToken = func(ctx context.Context, name string, auth authTool, redisSvc redis) (*model.Authentication, error) {
+	token, expired, err := auth.CreateToken(name)
+	if err != nil {
+		return nil, err
+	}
+
+	err = redisSvc.Set(ctx, token, name, expired)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Authentication{
+		Name:        name,
+		Token:       token,
+		ExpiredTime: time.UnixMilli(expired),
+	}, nil
+}
+
 func New(user userService, redisRepo redis, auth authTool) *AuthService {
 	return &AuthService{
 		redis:      redisRepo,
@@ -49,21 +68,7 @@ func (s *AuthService) Login(ctx context.Context, params *model.LoginInfo) (*mode
 		return nil, nil
 	}
 
-	token, expired, err := s.auth.CreateToken(params.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO
-	err = s.redis.Set(ctx, token, params.Name, expired)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.Authentication{
-		Name:  params.Name,
-		Token: token,
-	}, nil
+	return CreateToken(ctx, params.Name, s.auth, s.redis)
 }
 
 func (s *AuthService) Verify(ctx context.Context, params *model.Authentication) (bool, error) {
@@ -89,13 +94,5 @@ func (s *AuthService) Refresh(ctx context.Context, params *model.Authentication)
 		return nil, errors.New("not vaild token")
 	}
 
-	token, _, err := s.auth.CreateToken(params.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.Authentication{
-		Name:  params.Name,
-		Token: token,
-	}, nil
+	return CreateToken(ctx, params.Name, s.auth, s.redis)
 }
