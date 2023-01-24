@@ -2,29 +2,63 @@ package auth
 
 import (
 	"context"
+	"time"
 
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
 
-type repository interface {
-	Get(ctx context.Context, params *model.GetProductsParams) ([]*model.Product, error)
-	GetByID(ctx context.Context, id string) (*model.Product, error)
+type redis interface {
+	Get(ctx context.Context, token string) (string, error)
+	Set(ctx context.Context, key string, value string, expiration time.Time) error
+	Delete(ctx context.Context, key string) error
 }
 
-type ProductService struct {
-	repo repository
+type userService interface {
+	Authenticate(ctx context.Context, username string, password string) (bool, error)
 }
 
-func New(repo repository) *ProductService {
-	return &ProductService{
-		repo: repo,
+type authTool interface {
+	CreateToken(name string) (string, error)
+	VerifyToken(token string) (bool, string)
+}
+
+type AuthService struct {
+	redis      redis
+	userServer userService
+	auth       authTool
+}
+
+func New(user userService, redisRepo redis, auth authTool) *AuthService {
+	return &AuthService{
+		redis:      redisRepo,
+		userServer: user,
+		auth:       auth,
 	}
 }
 
-func (s *ProductService) Get(ctx context.Context, params *model.GetProductsParams) ([]*model.Product, error) {
-	return s.repo.Get(ctx, params)
-}
+func (s *AuthService) Login(ctx context.Context, params *model.LoginInfo) (*model.Authentication, error) {
+	success, err := s.userServer.Authenticate(ctx, params.Name, params.Password)
+	if err != nil {
+		return nil, err
+	}
 
-func (s *ProductService) GetByID(ctx context.Context, id string) (*model.Product, error) {
-	return s.repo.GetByID(ctx, id)
+	if !success {
+		return nil, nil
+	}
+
+	token, err := s.auth.CreateToken(params.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO
+	err = s.redis.Set(ctx, token, params.Name, time.Now().Add(time.Hour*8))
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Authentication{
+		Name:  params.Name,
+		Token: token,
+	}, nil
 }
