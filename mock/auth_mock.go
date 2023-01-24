@@ -7,7 +7,6 @@ package mock_auth
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 )
@@ -65,7 +64,7 @@ func (mr *MockredisMockRecorder) Get(ctx, token interface{}) *gomock.Call {
 }
 
 // Set mocks base method.
-func (m *Mockredis) Set(ctx context.Context, key, value string, expiration time.Time) error {
+func (m *Mockredis) Set(ctx context.Context, key, value string, expiration int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Set", ctx, key, value, expiration)
 	ret0, _ := ret[0].(error)
@@ -140,12 +139,13 @@ func (m *MockauthTool) EXPECT() *MockauthToolMockRecorder {
 }
 
 // CreateToken mocks base method.
-func (m *MockauthTool) CreateToken(name string) (string, error) {
+func (m *MockauthTool) CreateToken(name string) (string, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateToken", name)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CreateToken indicates an expected call of CreateToken.

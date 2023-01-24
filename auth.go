@@ -2,14 +2,16 @@ package auth
 
 import (
 	"context"
-	"time"
+	"errors"
 
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
 
+const redis_error_mes = "something went wrong, reduis can not found the token"
+
 type redis interface {
 	Get(ctx context.Context, token string) (string, error)
-	Set(ctx context.Context, key string, value string, expiration time.Time) error
+	Set(ctx context.Context, key string, value string, expiration int64) error
 	Delete(ctx context.Context, key string) error
 }
 
@@ -18,7 +20,7 @@ type userService interface {
 }
 
 type authTool interface {
-	CreateToken(name string) (string, error)
+	CreateToken(name string) (string, int64, error)
 	VerifyToken(token string) (bool, string)
 }
 
@@ -37,6 +39,7 @@ func New(user userService, redisRepo redis, auth authTool) *AuthService {
 }
 
 func (s *AuthService) Login(ctx context.Context, params *model.LoginInfo) (*model.Authentication, error) {
+	// TODO with retry
 	success, err := s.userServer.Authenticate(ctx, params.Name, params.Password)
 	if err != nil {
 		return nil, err
@@ -46,13 +49,47 @@ func (s *AuthService) Login(ctx context.Context, params *model.LoginInfo) (*mode
 		return nil, nil
 	}
 
-	token, err := s.auth.CreateToken(params.Name)
+	token, expired, err := s.auth.CreateToken(params.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO
-	err = s.redis.Set(ctx, token, params.Name, time.Now().Add(time.Hour*8))
+	err = s.redis.Set(ctx, token, params.Name, expired)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Authentication{
+		Name:  params.Name,
+		Token: token,
+	}, nil
+}
+
+func (s *AuthService) Verify(ctx context.Context, params *model.Authentication) (bool, error) {
+	if v, msg := s.auth.VerifyToken(params.Token); !v {
+		return false, errors.New(msg)
+	}
+
+	v, err := s.redis.Get(ctx, params.Token)
+	if err != nil || v != params.Name {
+		return false, errors.New(redis_error_mes)
+	}
+
+	return true, nil
+}
+
+func (s *AuthService) Refresh(ctx context.Context, params *model.Authentication) (*model.Authentication, error) {
+	v, err := s.Verify(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if !v {
+		return nil, errors.New("not vaild token")
+	}
+
+	token, _, err := s.auth.CreateToken(params.Name)
 	if err != nil {
 		return nil, err
 	}
