@@ -3,12 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
 
-const redis_error_mes = "something went wrong, reduis can not found the token"
+const redis_Error_mes = "something went wrong, reduis can not found the token"
 
 type redis interface {
 	Get(ctx context.Context, token string) (string, error)
@@ -29,24 +28,6 @@ type AuthService struct {
 	redis      redis
 	userServer userService
 	auth       authTool
-}
-
-var CreateToken = func(ctx context.Context, name string, auth authTool, redisSvc redis) (*model.Authentication, error) {
-	token, expired, err := auth.CreateToken(name)
-	if err != nil {
-		return nil, err
-	}
-
-	err = redisSvc.Set(ctx, token, name, expired)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.Authentication{
-		Name:        name,
-		Token:       token,
-		ExpiredTime: time.UnixMilli(expired),
-	}, nil
 }
 
 func New(user userService, redisRepo redis, auth authTool) *AuthService {
@@ -72,20 +53,11 @@ func (s *AuthService) Login(ctx context.Context, params *model.LoginInfo) (*mode
 }
 
 func (s *AuthService) Verify(ctx context.Context, params *model.Authentication) (bool, error) {
-	if v, msg := s.auth.VerifyToken(params.Token); !v {
-		return false, errors.New(msg)
-	}
-
-	v, err := s.redis.Get(ctx, params.Token)
-	if err != nil || v != params.Name {
-		return false, errors.New(redis_error_mes)
-	}
-
-	return true, nil
+	return Verify(ctx, params.Name, params.Token, s.auth, s.redis)
 }
 
 func (s *AuthService) Refresh(ctx context.Context, params *model.Authentication) (*model.Authentication, error) {
-	v, err := s.Verify(ctx, params)
+	v, err := Verify(ctx, params.Name, params.Token, s.auth, s.redis)
 	if err != nil {
 		return nil, err
 	}

@@ -20,36 +20,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func Fuzz_createToken(f *testing.F) {
-	f.Add("name_any", "pw", "token_any", int64(111232), 1, 1)
-	f.Add("deaff", "fea", "awefafwefeawf", int64(112311), 1, 1)
-	f.Add("123123132", "3123", "123131fewafeawfeaffw", int64(11121), 1, 1)
-
-	f.Fuzz(func(t *testing.T, name, pw, token string, expiredTime int64, authRun int, redisRun int) {
-		ctrl := gomock.NewController(t)
-
-		auth := mock.NewMockauthTool(ctrl)
-		redis := mock.NewMockredis(ctrl)
-
-		auth.EXPECT().CreateToken(name).Return(token, expiredTime, nil).Times(authRun)
-		redis.EXPECT().Set(gomock.Any(), token, name, expiredTime).Return(nil).Times(redisRun)
-
-		got, err := CreateToken(context.Background(), name, auth, redis)
-
-		if err != nil {
-			t.Fatalf("err: %v", err)
-		}
-
-		if got.Token != token {
-			t.Errorf("want: %s, got: %s", token, got.Token)
-		}
-
-		if got.Name != name {
-			t.Errorf("want: %s, got: %s", name, got.Name)
-		}
-	})
-}
-
 func FuzzAuthService_Login(f *testing.F) {
 	f.Add("name_any", "pw", "token_any", true, int64(111232), 1, 1)
 	f.Add("deaff", "fea", "awefafwefeawf", true, int64(112311), 1, 1)
@@ -198,7 +168,7 @@ var testProductService_Login_Error = []struct {
 	},
 }
 
-func TestAuthService_Login_error(t *testing.T) {
+func TestAuthService_Login_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	userService := mock.NewMockuserService(ctrl)
 	auth := mock.NewMockauthTool(ctrl)
@@ -246,150 +216,6 @@ func TestAuthService_Login_error(t *testing.T) {
 
 			if !errors.Is(err, c.userSericeReturn.err) {
 				t.Errorf("want: %v, got: %v", c.userSericeReturn.err, err)
-			}
-		})
-	}
-}
-
-func FuzzAuthService_Verify(f *testing.F) {
-	f.Add("test", "feafefawefwa")
-	f.Add("tesfeafewfjt", "feafefawefwa")
-	f.Add("tesfeafewfjt", "feafefawefefefwa")
-
-	f.Fuzz(func(t *testing.T, name, token string) {
-		ctrl := gomock.NewController(t)
-		auth := mock.NewMockauthTool(ctrl)
-		reduis := mock.NewMockredis(ctrl)
-
-		auth.EXPECT().
-			VerifyToken(token).
-			Return(true, "").
-			Times(1)
-
-		reduis.EXPECT().
-			Get(gomock.Any(), token).
-			Return(name, nil).
-			Times(1)
-
-		s := New(nil, reduis, auth)
-
-		result, err := s.Verify(context.Background(), &model.Authentication{
-			Name:  name,
-			Token: token,
-		})
-
-		if err != nil {
-			t.Error("expected err to be nil, got:", err)
-		}
-		if !result {
-			t.Errorf("want: %v, got: %v", true, result)
-		}
-
-	})
-}
-
-var testAuthService_Error_cases = []struct {
-	name       string
-	authReturn struct {
-		msg     string
-		success bool
-	}
-	redisReturn struct {
-		times       int
-		err         error
-		returnValue string
-	}
-}{
-	{
-		name: "auth failed",
-		authReturn: struct {
-			msg     string
-			success bool
-		}{
-			msg:     "auth failed",
-			success: false,
-		},
-		// redis return not be used
-	},
-	{
-		name: "redis return err",
-		authReturn: struct {
-			msg     string
-			success bool
-		}{
-			success: true,
-		},
-		redisReturn: struct {
-			times       int
-			err         error
-			returnValue string
-		}{
-			times:       1,
-			err:         errors.New("redis return error"),
-			returnValue: "",
-		},
-	},
-	{
-		name: "redis return name failed",
-		authReturn: struct {
-			msg     string
-			success bool
-		}{
-			success: true,
-		},
-		redisReturn: struct {
-			times       int
-			err         error
-			returnValue string
-		}{
-			times:       1,
-			err:         nil,
-			returnValue: "eror name",
-		},
-	},
-}
-
-func TestAuthService_Error(t *testing.T) {
-	const name = "test-name"
-	const token = "test-token"
-
-	for _, c := range testAuthService_Error_cases {
-		t.Run(c.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			auth := mock.NewMockauthTool(ctrl)
-			reduis := mock.NewMockredis(ctrl)
-
-			auth.EXPECT().
-				VerifyToken(token).
-				Return(c.authReturn.success, c.authReturn.msg).
-				Times(1)
-
-			reduis.EXPECT().
-				Get(gomock.Any(), token).
-				Return(c.redisReturn.returnValue, c.redisReturn.err).
-				Times(c.redisReturn.times)
-
-			s := New(nil, reduis, auth)
-			got, err := s.Verify(context.Background(), &model.Authentication{
-				Name:  name,
-				Token: token,
-			})
-
-			if got {
-				t.Errorf("always be false for verify")
-			}
-
-			if !c.authReturn.success {
-				if err.Error() != c.authReturn.msg {
-					t.Errorf("want: %v, got: %v", c.authReturn.msg, err.Error())
-				}
-				return
-			}
-			if c.redisReturn.returnValue != name || c.redisReturn.err != nil {
-				if err == nil {
-					t.Error("expected error, got none")
-				}
-				return
 			}
 		})
 	}
