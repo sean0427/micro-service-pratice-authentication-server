@@ -8,7 +8,7 @@ type Authentication struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Token       string    `json:"token"`
-	ExpiredTime string    `json:"expired_time"`
+	ExpiredTime time.Time `json:"expired_time"`
 	Timestamp   time.Time `json:"timestamp"`
 }
 
