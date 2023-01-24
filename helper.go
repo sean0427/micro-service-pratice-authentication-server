@@ -26,7 +26,7 @@ var createToken = func(ctx context.Context, name string, auth authTool, redisSvc
 	}, nil
 }
 
-var Verify = func(ctx context.Context, name, token string, auth authTool, redisSvc redisSvc) (bool, error) {
+var verifyToken = func(ctx context.Context, name, token string, auth authTool, redisSvc redisSvc) (bool, error) {
 	if v, msg := auth.VerifyToken(token); !v {
 		return false, errors.New(msg)
 	}

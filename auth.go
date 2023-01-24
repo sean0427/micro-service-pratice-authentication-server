@@ -53,11 +53,11 @@ func (s *AuthService) Login(ctx context.Context, params *model.LoginInfo) (*mode
 }
 
 func (s *AuthService) Verify(ctx context.Context, params *model.Authentication) (bool, error) {
-	return Verify(ctx, params.Name, params.Token, s.auth, s.redis)
+	return verifyToken(ctx, params.Name, params.Token, s.auth, s.redis)
 }
 
 func (s *AuthService) Refresh(ctx context.Context, params *model.Authentication) (*model.Authentication, error) {
-	v, err := Verify(ctx, params.Name, params.Token, s.auth, s.redis)
+	v, err := verifyToken(ctx, params.Name, params.Token, s.auth, s.redis)
 	if err != nil {
 		return nil, err
 	}

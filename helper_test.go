@@ -100,13 +100,13 @@ var testCreateToken_Error = []struct {
 }
 
 func TestCreateToken_Error(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	auth := mock.NewMockauthTool(ctrl)
-	redis := mock.NewMockredis(ctrl)
-
 	const token = "any"
 	for _, c := range testCreateToken_Error {
 		t.Run(c.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			auth := mock.NewMockauthTool(ctrl)
+			redis := mock.NewMockredis(ctrl)
+
 			auth.
 				EXPECT().
 				CreateToken(c.params.Name).
@@ -161,7 +161,7 @@ func FuzzVerify(f *testing.F) {
 			Return(name, nil).
 			Times(1)
 
-		result, err := Verify(context.Background(),
+		result, err := verifyToken(context.Background(),
 			name, token,
 			auth, redis,
 		)
@@ -257,7 +257,7 @@ func TestVerify_Error(t *testing.T) {
 				Return(c.redisReturn.returnValue, c.redisReturn.err).
 				Times(c.redisReturn.times)
 
-			got, err := Verify(context.Background(),
+			got, err := verifyToken(context.Background(),
 				name, token,
 				auth, redis,
 			)
