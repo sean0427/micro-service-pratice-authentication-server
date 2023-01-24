@@ -4,18 +4,16 @@ import (
 	"time"
 )
 
-type Product struct {
-	ID             string    `json:"id"`
-	Name           string    `json:"name"`
-	Created        time.Time `json:"created"`
-	Updated        time.Time `json:"updated"`
-	ManufacturerID string    `json:"manufacturer_id"`
-	CreatedBy      string    `json:"created_by"`
+type Authentication struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Token       string    `json:"token"`
+	ExpiredTime string    `json:"expired_time"`
+	Timestamp   time.Time `json:"timestamp"`
 }
 
-type Manufacturer struct {
-	ID      string    `json:"id"`
-	Name    string    `json:"name"`
-	Created time.Time `json:"created"`
-	Updated time.Time `json:"updated"`
+type LoginInfo struct {
+	Password  string    `json:"password"`
+	Name      string    `json:"name"`
+	Timestamp time.Time `json:"timestamp"`
 }
