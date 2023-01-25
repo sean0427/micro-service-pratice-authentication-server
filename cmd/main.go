@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-redis/redis/v9"
 	service "github.com/sean0427/micro-service-pratice-auth-domain"
 	"github.com/sean0427/micro-service-pratice-auth-domain/config"
 	jwt_token_helper "github.com/sean0427/micro-service-pratice-auth-domain/jwttokenhelper"
@@ -14,6 +15,11 @@ import (
 	"github.com/sean0427/micro-service-pratice-auth-domain/userdomainclient"
 	pb "github.com/sean0427/micro-service-pratice-auth-domain/userdomainclient/grpc/auth"
 	"google.golang.org/grpc"
+)
+
+var (
+	token_minute = flag.Int("token-period", 36, "access-token minute preiod")
+	port         = flag.Int("port", 8080, "port")
 )
 
 func createGrpcClient(addr string) (*grpc.ClientConn, error) {
@@ -26,9 +32,23 @@ func createGrpcClient(addr string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-var (
-	token_minute = flag.Int("token-period", 36, "access-token minute preiod")
-)
+func createRedisClient() (*redis.Client, error) {
+	address, err := config.GetRedisAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	password, err := config.GetRedisPassword()
+	if err != nil {
+		return nil, err
+	}
+
+	return redis.NewClient(&redis.Options{
+		Addr:     address,
+		Password: password,
+		DB:       0,
+	}), nil
+}
 
 func startServer() {
 	fmt.Println("Starting server...")
@@ -43,19 +63,26 @@ func startServer() {
 		panic(err)
 	}
 
-	client := pb.NewAuthClient(conn)
+	userClient := pb.NewAuthClient(conn)
 	defer conn.Close()
+	userDomainClient := userdomainclient.New(userClient)
 
 	authHelper := jwt_token_helper.New([]byte(config.GetJWTSecretKey()),
 		time.Minute*time.Duration(*token_minute))
-	redis := redis_repo.New(nil)
-	userDomainClient := userdomainclient.New(client)
+
+	rdb, err := createRedisClient()
+	if err != nil {
+		panic(err)
+	}
+	redis := redis_repo.New(rdb)
 
 	s := service.New(userDomainClient, redis, authHelper)
 	h := handler.New(s)
 
 	handler := h.Handler()
-	http.ListenAndServe(":8080", handler)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), handler); err != nil {
+		panic(err)
+	}
 
 	fmt.Println("Stoping server...")
 }
