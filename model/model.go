@@ -13,7 +13,6 @@ type Authentication struct {
 }
 
 type LoginInfo struct {
-	Password  string    `json:"password"`
-	Name      string    `json:"name"`
-	Timestamp time.Time `json:"timestamp"`
+	Password string `json:"password"`
+	Name     string `json:"name"`
 }

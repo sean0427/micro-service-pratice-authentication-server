@@ -15,6 +15,7 @@ import (
 	"github.com/sean0427/micro-service-pratice-auth-domain/userdomainclient"
 	pb "github.com/sean0427/micro-service-pratice-auth-domain/userdomainclient/grpc/auth"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -22,9 +23,14 @@ var (
 	port         = flag.Int("port", 8080, "port")
 )
 
-func createGrpcClient(addr string) (*grpc.ClientConn, error) {
-	var opts []grpc.DialOption
-	conn, err := grpc.Dial(addr, opts...)
+func createGrpcClient() (*grpc.ClientConn, error) {
+	addr, err := config.GetUserAuthGrpcAddr()
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -53,18 +59,13 @@ func createRedisClient() (*redis.Client, error) {
 func startServer() {
 	fmt.Println("Starting server...")
 
-	addr, err := config.GetUserAuthGrpcAddr()
+	conn, err := createGrpcClient()
 	if err != nil {
 		panic(err)
 	}
 
-	conn, err := createGrpcClient(addr)
-	if err != nil {
-		panic(err)
-	}
-
-	userClient := pb.NewAuthClient(conn)
 	defer conn.Close()
+	userClient := pb.NewAuthClient(conn)
 	userDomainClient := userdomainclient.New(userClient)
 
 	authHelper := jwt_token_helper.New([]byte(config.GetJWTSecretKey()),
