@@ -39,7 +39,6 @@ func New(user userService, redisRepo redisSvc, auth authTool) *AuthService {
 }
 
 func (s *AuthService) Login(ctx context.Context, params *model.LoginInfo) (*model.Authentication, error) {
-	// TODO with retry
 	success, err := s.userServer.Authenticate(ctx, params.Name, params.Password)
 	if err != nil {
 		return nil, err

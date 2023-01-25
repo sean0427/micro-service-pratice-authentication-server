@@ -32,5 +32,5 @@ func (c *GrpcClient) Authenticate(ctx context.Context, name, password string) (b
 		return true, nil
 	}
 
-	return false, errors.New(reply.Message)
+	return false, errors.New("grpc: reply" + reply.Message)
 }
