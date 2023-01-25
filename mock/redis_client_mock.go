@@ -70,7 +70,7 @@ func (mr *MockredisClientMockRecorder) Get(ctx, key interface{}) *gomock.Call {
 }
 
 // SetNX mocks base method.
-func (m *MockredisClient) SetNX(ctx context.Context, key, value string, expiration time.Duration) *redis.BoolCmd {
+func (m *MockredisClient) SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.BoolCmd {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetNX", ctx, key, value, expiration)
 	ret0, _ := ret[0].(*redis.BoolCmd)

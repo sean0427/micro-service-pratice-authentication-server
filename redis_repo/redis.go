@@ -10,7 +10,7 @@ import (
 
 type redisClient interface {
 	Get(ctx context.Context, key string) *redis.StringCmd
-	SetNX(ctx context.Context, key, value string, expiration time.Duration) *redis.BoolCmd
+	SetNX(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.BoolCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
 }
 
