@@ -19,7 +19,7 @@ func FuzzCreateToken(f *testing.F) {
 		ctrl := gomock.NewController(t)
 
 		auth := mock.NewMockauthTool(ctrl)
-		redis := mock.NewMockredis(ctrl)
+		redis := mock.NewMockredisSvc(ctrl)
 
 		auth.EXPECT().CreateToken(name).Return(token, expiredTime, nil).Times(1)
 		redis.EXPECT().Set(gomock.Any(), token, name, expiredTime).Return(nil).Times(redisRun)
@@ -105,7 +105,7 @@ func TestCreateToken_Error(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			auth := mock.NewMockauthTool(ctrl)
-			redis := mock.NewMockredis(ctrl)
+			redis := mock.NewMockredisSvc(ctrl)
 
 			auth.
 				EXPECT().
@@ -149,7 +149,7 @@ func FuzzVerify(f *testing.F) {
 	f.Fuzz(func(t *testing.T, name, token string) {
 		ctrl := gomock.NewController(t)
 		auth := mock.NewMockauthTool(ctrl)
-		redis := mock.NewMockredis(ctrl)
+		redis := mock.NewMockredisSvc(ctrl)
 
 		auth.EXPECT().
 			VerifyToken(token).
@@ -245,7 +245,7 @@ func TestVerify_Error(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			auth := mock.NewMockauthTool(ctrl)
-			redis := mock.NewMockredis(ctrl)
+			redis := mock.NewMockredisSvc(ctrl)
 
 			auth.EXPECT().
 				VerifyToken(token).

@@ -124,7 +124,7 @@ func TestAuthService_Login_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	userService := mock.NewMockuserService(ctrl)
 	auth := mock.NewMockauthTool(ctrl)
-	redis := mock.NewMockredis(ctrl)
+	redis := mock.NewMockredisSvc(ctrl)
 
 	for _, c := range testProductService_Login_Error {
 		t.Run(c.name, func(t *testing.T) {
@@ -168,7 +168,7 @@ func TestAuthService_Verify(t *testing.T) {
 	t.Run("test verify", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		auth := mock.NewMockauthTool(ctrl)
-		redis := mock.NewMockredis(ctrl)
+		redis := mock.NewMockredisSvc(ctrl)
 
 		s := New(nil, redis, auth)
 

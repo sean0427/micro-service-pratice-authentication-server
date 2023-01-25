@@ -32,7 +32,7 @@ func createGrpcClient(addr string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func getRedisClient() (*redis.Client, error) {
+func createRedisClient() (*redis.Client, error) {
 	address, err := config.GetRedisAddress()
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func startServer() {
 	authHelper := jwt_token_helper.New([]byte(config.GetJWTSecretKey()),
 		time.Minute*time.Duration(*token_minute))
 
-	rdb, err := getRedisClient()
+	rdb, err := createRedisClient()
 	if err != nil {
 		panic(err)
 	}
