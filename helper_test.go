@@ -153,7 +153,7 @@ func FuzzVerify(f *testing.F) {
 
 		auth.EXPECT().
 			VerifyToken(token).
-			Return(true, "").
+			Return(true, name).
 			Times(1)
 
 		redis.EXPECT().
