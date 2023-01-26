@@ -107,7 +107,7 @@ func (h *handler) Handler() *chi.Mux {
 		})
 		r.Post("/verify", h.Verify)
 		r.Post("/access_token", h.Login)
-		r.Post("/refeash", h.Refresh)
+		r.Post("/refresh", h.Refresh)
 	})
 
 	return r

@@ -8,6 +8,8 @@ import (
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
 
+const redis_Error_mes = "something went wrong, redis can not found the token"
+
 var createToken = func(ctx context.Context, name string, auth authTool, redisSvc redisSvc) (*model.Authentication, error) {
 	token, expired, err := auth.CreateToken(name)
 	if err != nil {
@@ -22,18 +24,22 @@ var createToken = func(ctx context.Context, name string, auth authTool, redisSvc
 	return &model.Authentication{
 		Name:        name,
 		Token:       token,
-		ExpiredTime: time.UnixMilli(expired),
+		ExpiredTime: time.Unix(expired, 0),
 	}, nil
 }
 
 var verifyToken = func(ctx context.Context, name, token string, auth authTool, redisSvc redisSvc) (bool, error) {
-	if v, msg := auth.VerifyToken(token); !v {
+	ret, msg := auth.VerifyToken(token)
+	if !ret {
 		return false, errors.New(msg)
 	}
 
-	v, err := redisSvc.Get(ctx, token)
-	if err != nil || v != name {
+	rName, err := redisSvc.Get(ctx, token)
+	if err != nil {
 		return false, errors.New(redis_Error_mes)
+	}
+	if msg != rName {
+		return false, errors.New("check name problem")
 	}
 
 	return true, nil

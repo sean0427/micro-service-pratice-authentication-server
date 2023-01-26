@@ -7,8 +7,6 @@ import (
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
 
-const redis_Error_mes = "something went wrong, reduis can not found the token"
-
 type redisSvc interface {
 	Get(ctx context.Context, token string) (string, error)
 	Set(ctx context.Context, key string, value string, expiration int64) error
