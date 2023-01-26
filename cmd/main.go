@@ -68,8 +68,11 @@ func startServer() {
 	userClient := pb.NewAuthClient(conn)
 	userDomainClient := userdomainclient.New(userClient)
 
-	authHelper := jwt_token_helper.New([]byte(config.GetJWTSecretKey()),
+	authHelper, err := jwt_token_helper.New([]byte(config.GetJWTSecretKey()),
 		time.Minute*time.Duration(*token_minute))
+	if err != nil {
+		panic(err)
+	}
 
 	rdb, err := createRedisClient()
 	if err != nil {
