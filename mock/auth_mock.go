@@ -7,6 +7,7 @@ package mock
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 )
@@ -64,7 +65,7 @@ func (mr *MockredisSvcMockRecorder) Get(ctx, token interface{}) *gomock.Call {
 }
 
 // Set mocks base method.
-func (m *MockredisSvc) Set(ctx context.Context, key, value string, expiration int64) error {
+func (m *MockredisSvc) Set(ctx context.Context, key, value string, expiration time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Set", ctx, key, value, expiration)
 	ret0, _ := ret[0].(error)
@@ -139,11 +140,11 @@ func (m *MockauthTool) EXPECT() *MockauthToolMockRecorder {
 }
 
 // CreateToken mocks base method.
-func (m *MockauthTool) CreateToken(name string) (string, int64, error) {
+func (m *MockauthTool) CreateToken(name string) (string, time.Time, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateToken", name)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(int64)
+	ret1, _ := ret[1].(time.Time)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -155,12 +156,13 @@ func (mr *MockauthToolMockRecorder) CreateToken(name interface{}) *gomock.Call {
 }
 
 // VerifyToken mocks base method.
-func (m *MockauthTool) VerifyToken(token string) (bool, string) {
+func (m *MockauthTool) VerifyToken(token string) (bool, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VerifyToken", token)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(string)
-	return ret0, ret1
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // VerifyToken indicates an expected call of VerifyToken.

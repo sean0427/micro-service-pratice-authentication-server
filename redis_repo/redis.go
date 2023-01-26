@@ -29,8 +29,8 @@ func (r *RedisRepo) Get(ctx context.Context, key string) (string, error) {
 	return res.Result()
 }
 
-func (r *RedisRepo) Set(ctx context.Context, key, value string, expireation int64) error {
-	set := r.client.SetNX(ctx, key, value, time.Until(time.Unix(expireation, 0)))
+func (r *RedisRepo) Set(ctx context.Context, key, value string, expiration time.Time) error {
+	set := r.client.SetNX(ctx, key, value, time.Until(expiration))
 	if v, err := set.Result(); err != nil {
 		return err
 	} else if !v {

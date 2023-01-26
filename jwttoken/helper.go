@@ -10,8 +10,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-var METHOD_NAME = "EdDSA"
-
 type myAuthClaims struct {
 	name string
 	jwt.RegisteredClaims
@@ -43,11 +41,11 @@ func New(secret []byte, expired time.Duration) (*TokenHelper, error) {
 	}, nil
 }
 
-func (t *TokenHelper) CreateToken(name string) (string, int64, error) {
+func (t *TokenHelper) CreateToken(name string) (string, time.Time, error) {
 	expired := time.Now().Add(t.expiredTime)
 
 	claims := myAuthClaims{
-		name: "aa",
+		name: "My Token",
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(expired),
@@ -59,23 +57,23 @@ func (t *TokenHelper) CreateToken(name string) (string, int64, error) {
 	j := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	token, err := j.SignedString(t.secret)
 	if err != nil {
-		return "", 0, err
+		return "", time.Time{}, err
 	}
 
-	return token, expired.Unix(), nil
+	return token, expired, nil
 }
 
-func (t *TokenHelper) VerifyToken(jwttoken string) (bool, string) {
-	token, err := verifyToken(t.pub, jwttoken)
+func (t *TokenHelper) VerifyToken(tokenStr string) (bool, string, error) {
+	token, err := verifyToken(t.pub, tokenStr)
 	if err != nil {
-		return false, err.Error()
+		return false, "", err
 	}
 
 	if !token.Valid {
-		return false, ""
+		return false, "", nil
 	}
 
-	return true, token.Claims.(*myAuthClaims).RegisteredClaims.Issuer
+	return true, token.Claims.(*myAuthClaims).RegisteredClaims.Issuer, nil
 }
 
 func verifyToken(publicKey interface{}, token string) (*jwt.Token, error) {
@@ -95,5 +93,3 @@ func verifyToken(publicKey interface{}, token string) (*jwt.Token, error) {
 	}
 	return t, nil
 }
-
-// TODO verify

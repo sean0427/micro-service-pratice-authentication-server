@@ -86,7 +86,7 @@ func FuzzRedisRepo_Set(f *testing.F) {
 			Times(1)
 
 		r := New(redisClient)
-		err := r.Set(context.Background(), key, value, exp)
+		err := r.Set(context.Background(), key, value, time.Unix(exp, 0))
 
 		if errMsg != "" {
 			if err == nil {

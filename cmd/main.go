@@ -9,7 +9,7 @@ import (
 	"github.com/go-redis/redis/v9"
 	service "github.com/sean0427/micro-service-pratice-auth-domain"
 	"github.com/sean0427/micro-service-pratice-auth-domain/config"
-	jwt_token_helper "github.com/sean0427/micro-service-pratice-auth-domain/jwttokenhelper"
+	jwt_token "github.com/sean0427/micro-service-pratice-auth-domain/jwttoken"
 	handler "github.com/sean0427/micro-service-pratice-auth-domain/net"
 	"github.com/sean0427/micro-service-pratice-auth-domain/redis_repo"
 	"github.com/sean0427/micro-service-pratice-auth-domain/userdomainclient"
@@ -68,7 +68,7 @@ func startServer() {
 	userClient := pb.NewAuthClient(conn)
 	userDomainClient := userdomainclient.New(userClient)
 
-	authHelper, err := jwt_token_helper.New([]byte(config.GetJWTSecretKey()),
+	authHelper, err := jwt_token.New([]byte(config.GetJWTSecretKey()),
 		time.Minute*time.Duration(*token_minute))
 	if err != nil {
 		panic(err)

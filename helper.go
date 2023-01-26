@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
@@ -24,22 +23,27 @@ var createToken = func(ctx context.Context, name string, auth authTool, redisSvc
 	return &model.Authentication{
 		Name:        name,
 		Token:       token,
-		ExpiredTime: time.Unix(expired, 0),
+		ExpiredTime: expired,
 	}, nil
 }
 
 var verifyToken = func(ctx context.Context, name, token string, auth authTool, redisSvc redisSvc) (bool, error) {
-	ret, msg := auth.VerifyToken(token)
+	ret, rName, err := auth.VerifyToken(token)
 	if !ret {
-		return false, errors.New(msg)
+		return false, err
 	}
 
-	rName, err := redisSvc.Get(ctx, token)
+	redName, err := redisSvc.Get(ctx, token)
 	if err != nil {
 		return false, errors.New(redis_Error_mes)
 	}
-	if msg != rName {
-		return false, errors.New("check name problem")
+
+	if redName != rName {
+		return false, errors.New("check vaild")
+	}
+
+	if name != "" && name != redName {
+		return false, errors.New(redis_Error_mes)
 	}
 
 	return true, nil
