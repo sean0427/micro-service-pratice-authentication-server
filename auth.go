@@ -3,15 +3,14 @@ package auth
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
 
-const redis_Error_mes = "something went wrong, reduis can not found the token"
-
 type redisSvc interface {
 	Get(ctx context.Context, token string) (string, error)
-	Set(ctx context.Context, key string, value string, expiration int64) error
+	Set(ctx context.Context, key string, value string, expiration time.Time) error
 	Delete(ctx context.Context, key string) error
 }
 
@@ -20,8 +19,8 @@ type userService interface {
 }
 
 type authTool interface {
-	CreateToken(name string) (string, int64, error)
-	VerifyToken(token string) (bool, string)
+	CreateToken(name string) (string, time.Time, error)
+	VerifyToken(token string) (bool, string, error)
 }
 
 type AuthService struct {
