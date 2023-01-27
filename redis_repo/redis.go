@@ -44,3 +44,5 @@ func (r *RedisRepo) Delete(ctx context.Context, key string) error {
 	_, err := cmd.Result()
 	return err
 }
+
+var _ redisClient = (*redis.Client)(nil)
