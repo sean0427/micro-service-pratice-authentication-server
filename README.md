@@ -2,7 +2,7 @@
 authentication server for pratice services
 
 
-## System environemt
+## System environment
 
 ### Redis
   - REDIS_ADDRESS

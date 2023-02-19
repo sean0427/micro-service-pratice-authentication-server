@@ -127,7 +127,7 @@ func TestCreateToken_Error(t *testing.T) {
 				t.Fatal("should get error")
 			}
 
-			// shuld be ordering
+			// should be ordering
 			if c.redisRun.err != nil {
 				if !errors.Is(err, c.redisRun.err) {
 					t.Errorf("want: %v, got: %v", c.redisRun.err, err)
