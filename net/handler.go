@@ -2,12 +2,10 @@ package net
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 
-	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 	"github.com/sean0427/micro-service-pratice-auth-domain/model"
 )
 
@@ -26,89 +24,63 @@ func New(service service) *handler {
 		service: service}
 }
 
-func (h *handler) Verify(w http.ResponseWriter, r *http.Request) {
-	value := r.Header.Get("Authorization")
+func (h *handler) Verify(c *gin.Context) {
+	value := c.Params.ByName("Authorization")
 
 	token := strings.TrimPrefix(value, "Bearer ") // header Authorization bare
 	params := model.Authentication{
 		Token: token,
 	}
 
-	auth, err := h.service.Verify(r.Context(), &params)
+	auth, err := h.service.Verify(c, &params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
-	if err := json.NewEncoder(w).Encode(auth); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSONP(http.StatusOK, auth)
 }
 
-func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func (h *handler) Login(c *gin.Context) {
 	var params model.LoginInfo
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+
+	if err := c.ShouldBind(&params); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
 	}
 
-	auth, err := h.service.Login(r.Context(), &params)
+	auth, err := h.service.Login(c, &params)
 	if err != nil || auth == nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
-	if err := json.NewEncoder(w).Encode(auth); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("token", auth.Token)
-	w.WriteHeader(http.StatusOK)
+	c.Header("token", auth.Token)
+	c.JSONP(http.StatusOK, auth)
 }
 
-func (h *handler) Refresh(w http.ResponseWriter, r *http.Request) {
-	value := r.Header.Get("Authorization")
+func (h *handler) Refresh(c *gin.Context) {
+	value := c.Params.ByName("Authorization")
 
 	token := strings.TrimPrefix(value, "Bearer ") // header Authorization bare
 	params := model.Authentication{
 		Token: token,
 	}
 
-	auth, err := h.service.Refresh(r.Context(), &params)
+	auth, err := h.service.Refresh(c, &params)
 	if err != nil {
 		// TODO return unAuth
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
-	if err := json.NewEncoder(w).Encode(auth); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c.Header("token", auth.Token)
 
-	w.Header().Set("token", auth.Token)
-	w.WriteHeader(http.StatusOK)
+	c.JSONP(http.StatusOK, auth)
 }
 
-func (h *handler) Handler() *chi.Mux {
-	r := chi.NewRouter()
+func (h *handler) Register(e *gin.Engine) {
+	r := e.Group("")
+	{
+		r.POST("/verify", h.Verify)
+		r.POST("/access_token", h.Login)
+		r.POST("/refresh", h.Refresh)
 
-	r.Use(middleware.Logger)
-
-	r.Route("/", func(r chi.Router) {
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("hello"))
-		})
-		r.Post("/verify", h.Verify)
-		r.Post("/access_token", h.Login)
-		r.Post("/refresh", h.Refresh)
-	})
-
-	return r
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v9"
 	service "github.com/sean0427/micro-service-pratice-auth-domain"
 	"github.com/sean0427/micro-service-pratice-auth-domain/config"
@@ -83,8 +84,11 @@ func startServer() {
 	s := service.New(userDomainClient, redis, authHelper)
 	h := handler.New(s)
 
-	handler := h.Handler()
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), handler); err != nil {
+	g := gin.Default()
+
+	h.Register(g)
+	// TODO: graceful shutdown
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), g.Handler()); err != nil {
 		panic(err)
 	}
 
